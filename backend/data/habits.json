@@ -1,0 +1,15 @@
+{
+    "habits": [
+      { "id": 1, "title": "Drink Water", "description": "Drink 8 glasses of water daily" },
+      { "id": 2, "title": "Exercise", "description": "Do 30 minutes of exercise" },
+      { "id": 3, "title": "Read a Book", "description": "Read for at least 15 minutes" },
+      { "id": 4, "title": "Meditate", "description": "Meditate for 10 minutes" },
+      { "id": 5, "title": "Sleep on Time", "description": "Go to bed by 10 PM" },
+      { "id": 6, "title": "Eat Healthy", "description": "Eat at least one healthy meal" },
+      { "id": 7, "title": "Take Breaks", "description": "Take a 5-minute break every hour" },
+      { "id": 8, "title": "Journal", "description": "Write down thoughts and reflections" },
+      { "id": 9, "title": "Plan Day", "description": "Set daily goals in the morning" },
+      { "id": 10, "title": "Reduce Screen Time", "description": "Limit screen time to 2 hours" }
+    ]
+  }
+  
