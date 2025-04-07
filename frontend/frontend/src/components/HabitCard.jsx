@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircleIcon } from 'lucide-react';
 import { FiCheckCircle } from 'react-icons/fi';

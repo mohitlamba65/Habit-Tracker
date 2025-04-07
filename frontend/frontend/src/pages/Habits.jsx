@@ -43,12 +43,12 @@ const AnimatedTorusKnot = () => {
 
 const Habits = () => {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-700 py-16">
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-700 py-24">
       
       {/* 3D Canvas Background */}
       {/* Page Content */}
       <motion.h2
-        className="text-5xl font-bold text-white mb-10 relative z-10 py-5"
+        className="text-5xl font-bold text-white mb-10 relative z-10 py-20"
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: 'easeInOut' }}

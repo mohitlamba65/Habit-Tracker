@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, List, UserPlus, LogIn, Grid } from 'lucide-react';
@@ -11,7 +12,7 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <div className="container mx-auto flex justify-between items-center my-0">
+      <div className="container mx-auto flex justify-between items-center">
         {/* Logo and Title */}
         <Link to="/" className="flex items-center space-x-3">
           <motion.img
