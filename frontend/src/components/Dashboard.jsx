@@ -1,36 +1,78 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+
 import MainContext from "../context/MainContext";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import TaskModal from "../components/TaskModal";
 
+import { getTasks, completeTask, deleteTask } from "../api/taskApi";
+
 const Dashboard = () => {
   const { tasks, setTasks } = useContext(MainContext);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [sortKey, setSortKey] = useState("name");
 
-  const handleAddTask = (task) => {
-    setTasks([...tasks, task]); 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getTasks();
+        setTasks(data);
+      } catch (err) {
+        toast.error("Failed to load tasks.");
+        console.error(err);
+      }
+    };
+    fetchData();
+  }, [setTasks]);
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "completed") return task.status;
+    if (filter === "pending") return !task.status;
+    return true;
+  });
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortKey === "name") return a.habit.localeCompare(b.habit);
+    if (sortKey === "time") return new Date(a.completion_time) - new Date(b.completion_time);
+    return 0;
+  });
+
+  const handleComplete = async (id) => {
+    try {
+      await completeTask(id);
+      setTasks((prev) =>
+        prev.map((task) => (task._id === id ? { ...task, status: true } : task))
+      );
+      toast.success("Task marked as complete!");
+    } catch (err) {
+      toast.error("Failed to complete task.");
+      console.error(err);
+    }
   };
 
-  const handleCompleteTask = (taskId) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, completed: true } : task
-    );
-    setTasks(updatedTasks); 
+  const handleDelete = async (id) => {
+    try {
+      await deleteTask(id);
+      setTasks((prev) => prev.filter((task) => task._id !== id));
+      toast.success("Task deleted!");
+    } catch (err) {
+      toast.error("Failed to delete task.");
+    }
   };
 
-  
+  const completedCount = tasks.filter((t) => t.status).length;
+  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-20">
+    <div className="flex min-h-screen bg-[#FFFFFF]">
       <Sidebar />
-
-      <div className="flex-1 p-6">
+      <div className="flex-1 ml-64 px-10 py-6">
         <Header />
 
         <motion.h2
-          className="text-4xl font-bold text-center text-blue-800 mb-6 mt-8"
+          className="text-4xl font-bold text-center text-[#6348EB] mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -38,63 +80,80 @@ const Dashboard = () => {
           Your Dashboard
         </motion.h2>
 
-        <motion.p
-          className="text-center text-gray-700 mb-6"
+        <motion.div
+          className="mb-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
         >
-          Manage your habits, track progress, and plan tasks efficiently.
-        </motion.p>
-
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-semibold text-gray-900">
-              Task Manager
-            </h3>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-            >
-              + Add Task
-            </button>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm font-medium text-gray-700">Progress</span>
+            <span className="text-sm font-medium text-gray-700">{Math.round(progress)}%</span>
           </div>
+          <div className="w-full bg-gray-300 rounded-full h-2.5">
+            <div
+              className="h-2.5 rounded-full bg-gradient-to-r from-[#6348EB] via-[#8B36EA] to-[#2F5FEB]"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </motion.div>
 
-          <TaskModal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            onSubmit={handleAddTask}
-          />
+        <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
+          <TaskModal />
+          <select
+            className="p-2 border rounded-md text-sm shadow-sm"
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+          </select>
 
-          <div className="mt-4">
-            {tasks.length > 0 ? (
-              tasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  className={`border p-4 mb-2 rounded shadow-sm ${
-                    task.completed ? "bg-green-200" : "bg-gray-100"
-                  }`}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h3 className="font-bold">{task.title}</h3>
-                  <p className="text-gray-700">{task.description}</p>
-                  <small className="text-gray-500">Due: {task.dueDate}</small>
-                  {!task.completed && (
+          <select
+            className="p-2 border rounded-md text-sm shadow-sm"
+            onChange={(e) => setSortKey(e.target.value)}
+          >
+            <option value="name">Sort by Name</option>
+            <option value="time">Sort by Deadline</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {sortedTasks.length > 0 ? (
+            sortedTasks.map((task) => (
+              <motion.div
+                key={task._id}
+                className={`p-5 rounded-lg shadow-md border transition-all ${
+                  task.status ? "bg-green-50 border-green-400" : "bg-white border-gray-200"
+                }`}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <h2 className="text-xl font-semibold text-gray-800">{task.habit}</h2>
+                <p className="text-gray-500 text-sm">
+                  Due: {new Date(task.completion_time).toLocaleString()}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  {!task.status && (
                     <button
-                      className="ml-4 text-sm bg-green-500 text-white px-2 py-1 rounded"
-                      onClick={() => handleCompleteTask(task.id)}
+                      className="bg-gradient-to-r from-[#6348EB] via-[#8B36EA] to-[#2F5FEB] text-white px-3 py-1.5 rounded-md text-sm"
+                      onClick={() => handleComplete(task._id)}
                     >
-                      Mark as Complete
+                      ✅ Complete
                     </button>
                   )}
-                </motion.div>
-              ))
-            ) : (
-              <p className="text-gray-600 text-center">No tasks added yet.</p>
-            )}
-          </div>
+                  <button
+                    className="bg-red-500 text-white px-3 py-1.5 rounded-md text-sm"
+                    onClick={() => handleDelete(task._id)}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No tasks available.</p>
+          )}
         </div>
       </div>
     </div>

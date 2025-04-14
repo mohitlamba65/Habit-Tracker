@@ -5,13 +5,10 @@ import MainContext from "./MainContext";
 const MainProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
   const [currentView, setCurrentView] = useState("tasks");
-  const [ollamaConnected, setOllamaConnected] = useState(false);
   const [settings, setSettings] = useState({
     darkMode: false,
     notifications: true,
     aiAssistant: true,
-    ollamaEndpoint: "http://localhost:11434/api/chat",
-    ollamaModel: "mistral",
   });
 
   useEffect(() => {
@@ -52,8 +49,6 @@ const MainProvider = ({ children }) => {
         setSettings,
         currentView,
         handleNavigation,
-        ollamaConnected,
-        setOllamaConnected,
       }}
     >
       {children}

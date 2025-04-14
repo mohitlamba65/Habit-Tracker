@@ -1,61 +1,29 @@
-// import React, { useState } from 'react';
-
-// const Login = () => {
-//   const [form, setForm] = useState({ email: '', password: '' });
-
-//   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     await fetch('http://localhost:5000/api/auth/login', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(form),
-//     });
-//   };
-
-//   return (
-//     <div className="flex justify-center items-center h-screen bg-gray-100">
-//       <form className="bg-white p-8 shadow-lg rounded-md max-w-md w-full" onSubmit={handleSubmit}>
-//         <h2 className="text-2xl font-semibold text-gray-800 mb-6">Login</h2>
-//         <input
-//           type="email"
-//           name="email"
-//           placeholder="Email"
-//           value={form.email}
-//           onChange={handleChange}
-//           className="w-full mb-4 px-4 py-2 border rounded-md"
-//         />
-//         <input
-//           type="password"
-//           name="password"
-//           placeholder="Password"
-//           value={form.password}
-//           onChange={handleChange}
-//           className="w-full mb-4 px-4 py-2 border rounded-md"
-//         />
-//         <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Login</button>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default Login;
-
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { motion } from 'framer-motion';
+import API from '../utils/axios.js'
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx'
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
-
+import { toast } from 'react-hot-toast'
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logic for handling login
+    try {
+      const res = await API.post("users/login", form);
+      toast.success("Login successful")
+      login(res.data.user); 
+      navigate("/dashboard"); 
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed");
+    }
   };
 
   return (
