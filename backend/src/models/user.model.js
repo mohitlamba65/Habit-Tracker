@@ -16,12 +16,16 @@ const userSchema = new Schema(
             trim: true,
             lowercase: true
         },
+        phone: {
+            type: String,
+            required: true
+        },
         password: {
             type: String,
-            required:true
+            required: true
         },
         avatar: {
-            type: String, 
+            type: String,
         },
         habits: [
             {
@@ -31,29 +35,46 @@ const userSchema = new Schema(
         ],
         logs: [
             {
-                type: String
-            } 
+                type: Schema.Types.ObjectId,
+                ref: 'Productivity',
+            },
         ],
+
+        notificationSettings: {
+            enabled: { type: Boolean, default: true },
+            email: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false },
+            push: { type: Boolean, default: false }
+        },
+        
+        pushSubscription: {
+            endpoint: { type: String },
+            keys: {
+                p256dh: { type: String },
+                auth: { type: String }
+            }
+        },
+
         refreshToken: {
             type: String,
-            
+
         }
     },
     { timestamps: true }
 )
 
 userSchema.pre("save", async function (next) {
-    if(!this.isModified("password")) return next();
+    if (!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 
-userSchema.methods.isPasswordCorrect = async function(password){
+userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
 
-userSchema.methods.generateAccessToken = function(){
+userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
             _id: this._id,
@@ -66,11 +87,11 @@ userSchema.methods.generateAccessToken = function(){
         }
     )
 }
-userSchema.methods.generateRefreshToken = function(){
+userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
-            
+
         },
         process.env.REFRESH_TOKEN_SECRET,
         {

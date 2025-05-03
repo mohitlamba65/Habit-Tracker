@@ -7,6 +7,7 @@ import {
     logoutUser,
     refreshAccessToken,
     registerUser,
+    savePushSubscription,
     updateUser,
     updateUserAvatar
 } from "../controllers/user.controller.js"
@@ -23,7 +24,8 @@ router.post("/logout", isAuthenticated, logoutUser)
 router.post("/refresh-token", refreshAccessToken)
 router.put("/update-account", isAuthenticated, updateUser);
 router.post("/upload-avatar", isAuthenticated,upload.single("avatar"), updateUserAvatar)
-router.put("/change-password", isAuthenticated ,changeCurrentPassword)
+router.put("/change-password", isAuthenticated, changeCurrentPassword)
+router.post("/push-subscribe", isAuthenticated, savePushSubscription)
 
 export default router
 

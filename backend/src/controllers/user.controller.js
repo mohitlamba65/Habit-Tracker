@@ -26,7 +26,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body
+        const { name, email, password,phone} = req.body
 
         const userExists = await User.findOne({ email })
         if (userExists) {
@@ -49,6 +49,7 @@ export const registerUser = async (req, res) => {
 
         const newUser = await User.create({
             name,
+            phone,
             email,
             password,
             avatar: avatar?.url || "",
@@ -346,3 +347,18 @@ export const updateUserAvatar = async (req, res) => {
         return res.status(500).json({ message: error?.message });
     }
 };
+
+export const savePushSubscription = async (req, res) => {
+    try {
+      const user = req.user;
+  
+      user.pushSubscription = req.body.subscription;
+      await user.save();
+  
+      res.status(200).json({ message: "Push subscription saved successfully" });
+    } catch (err) {
+      console.error("Error saving push subscription:", err);
+      res.status(500).json({ message: "Failed to save push subscription" });
+    }
+  };
+  

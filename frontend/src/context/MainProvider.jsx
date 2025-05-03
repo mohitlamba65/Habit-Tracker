@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import PropTypes from "prop-types"; 
+import PropTypes from "prop-types";
 import MainContext from "./MainContext";
+import { getTasks } from "../api/taskApi.js"; 
 
 const MainProvider = ({ children }) => {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState([]); 
   const [currentView, setCurrentView] = useState("tasks");
   const [settings, setSettings] = useState({
     darkMode: false,
@@ -12,31 +13,26 @@ const MainProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    try {
-      const savedState = JSON.parse(localStorage.getItem("studyflowAppState"));
-      if (savedState) {
-        setTasks(savedState.tasks || []);
-        setSettings((prevSettings) => ({
-          ...prevSettings,
-          ...savedState.settings,
-        }));
-        setCurrentView(savedState.currentView || "tasks");
+    const fetchTasks = async () => {
+      try {
+        const fetchedTasks = await getTasks();
+        setTasks(fetchedTasks); 
+      } catch (err) {
+        console.error("Failed to fetch tasks from backend:", err);
       }
-    } catch (error) {
-      console.error("Error loading app state:", error);
-    }
+    };
+
+    fetchTasks(); 
   }, []);
+
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        "studyflowAppState",
-        JSON.stringify({ tasks, currentView, settings })
-      );
+      localStorage.setItem("studyflowSettings", JSON.stringify(settings));
     } catch (error) {
-      console.error("Error saving app state:", error);
+      console.error("Error saving settings:", error);
     }
-  }, [tasks, currentView, settings]);
+  }, [settings]);
 
   const handleNavigation = (view) => setCurrentView(view);
 
@@ -57,7 +53,7 @@ const MainProvider = ({ children }) => {
 };
 
 MainProvider.propTypes = {
-  children: PropTypes.node.isRequired, 
+  children: PropTypes.node.isRequired,
 };
 
 export default MainProvider;

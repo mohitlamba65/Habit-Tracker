@@ -9,15 +9,20 @@ const productivitySchema = new Schema(
         },
         mood: {
             type: String,
-            enum: ["happy", "neutral", "sad", "stressed"], 
+            enum: ["happy", "neutral", "sad", "stressed"],
             default: "neutral"
         },
         activity_data: {
-            type:Object
+            type: {
+                type: String,
+                default: "unspecified"
+            },
+            tags: [String],
         }
 
+
     },
-    {timestamps:true}
+    { timestamps: true }
 )
 
-export const Productivity = mongoose.model("Productivity",productivitySchema)
+export const Productivity = mongoose.model("Productivity", productivitySchema)

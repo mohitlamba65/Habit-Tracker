@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import API from '../utils/axios';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { FcGoogle } from 'react-icons/fc';
-import { FaGithub } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import API from "../utils/axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
+import { FaGithub } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 const Signup = () => {
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -18,16 +20,16 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
-      toast.error('Please fill all fields');
+      toast.error("Please fill all fields");
       return;
     }
     try {
-      const res = await API.post('/users/register', form);
-      toast.success('Signup successful');
+      const res = await API.post("/users/register", form);
+      toast.success("Signup successful");
       login(res.data.user);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Signup failed');
+      toast.error(err.response?.data?.message || "Signup failed");
     }
   };
 
@@ -41,7 +43,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-purple-300 to-blue-400">
+    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-purple-300 to-blue-400 mt-[4rem]">
       <motion.form
         className="bg-white p-10 shadow-xl rounded-lg max-w-md w-full"
         onSubmit={handleSubmit}
@@ -61,6 +63,33 @@ const Signup = () => {
           onChange={handleChange}
           className="w-full mb-4 px-4 py-2 border border-gray-300 rounded-md"
         />
+        <div className="w-full mb-4">
+          <PhoneInput
+            country={"in"}
+            value={form.phone}
+            onChange={(phone) => setForm({ ...form, phone })}
+            inputProps={{
+              name: "phone",
+              required: true,
+              autoFocus: false,
+            }}
+            containerStyle={{ width: "100%" }}
+            inputStyle={{
+              width: "100%",
+              height: "42px",
+              borderRadius: "0.375rem", 
+              border: "1px solid #D1D5DB", 
+              paddingLeft: "48px",
+              paddingRight: "16px",
+              fontSize: "1rem",
+            }}
+            buttonStyle={{
+              border: "none",
+              backgroundColor: "transparent",
+              paddingLeft: "12px",
+            }}
+          />
+        </div>
         <input
           type="email"
           name="email"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../utils/axios";
 import toast from "react-hot-toast";
@@ -13,6 +13,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { ThemeContext } from "../context/ThemeContext";
+import { toggleNotifications } from "../api/notification";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -39,8 +41,10 @@ const Settings = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarSuccess, setAvatarSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [enabled, setEnabled] = useState(true);
+
+  const { darkMode, setDarkMode } = useContext(ThemeContext);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -64,6 +68,12 @@ const Settings = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleToggle = async() => {
+    toggleNotifications().then((res) => setEnabled(res.data.enabled));
+    await API.patch("/notifications/preferences", formData.notifications);
+
   };
 
   const handlePasswordChange = (e) => {
@@ -98,7 +108,7 @@ const Settings = () => {
         setAvatarPreview(URL.createObjectURL(compressedFile));
         setAvatarSuccess(false);
       } catch (error) {
-        toast.error("Error compressing image",error);
+        toast.error("Error compressing image", error);
       }
     }
   };
@@ -187,14 +197,16 @@ const Settings = () => {
     }
   };
 
-  const bgColor = darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-800";
+  const bgColor = darkMode
+    ? "bg-gray-900 text-white"
+    : "bg-white text-gray-800";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`max-w-2xl mx-auto pt-24 p-6 shadow-xl rounded-lg ${bgColor} relative`}
+      className={`max-w-2xl mx-auto pt-24 p-6 shadow-xl rounded-lg ${bgColor} relative mt-[4rem]`}
     >
       {/* Dark Mode Toggle */}
       <div className="absolute top-6 right-6">
@@ -283,6 +295,26 @@ const Settings = () => {
               <label className="capitalize">{type}</label>
             </div>
           ))}
+          <button
+            onClick={() =>
+              API.post("/notifications/send-reminder").then(() =>
+                toast.success("Email sent!")
+              )
+            }
+            className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+          >
+            🔔 Send Reminder Now
+          </button>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-bold">Notification Settings</h2>
+          <button
+            onClick={handleToggle}
+            className="mt-2 p-2 bg-blue-500 text-white rounded"
+          >
+            {enabled ? "Disable Notifications" : "Enable Notifications"}
+          </button>
         </div>
 
         <button

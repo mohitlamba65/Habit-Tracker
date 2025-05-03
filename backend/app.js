@@ -9,6 +9,8 @@ import userRoutes from "./src/router/user.routes.js"
 import habitRoutes from "./src/router/habit.routes.js"
 import productivityRoutes from "./src/router/productivity.routes.js"
 import predictionRoutes from "./src/router/prediction.routes.js"
+import notificationRoutes from "./src/router/notification.routes.js";
+import './src/utils/scheduler.js'
 
 const app = express()
 console.log("CORS Origin:", process.env.CORS_ORIGIN);
@@ -26,5 +28,7 @@ app.use("/api/users", userRoutes)
 app.use("/api/habits", habitRoutes)
 app.use("/api/productivity", productivityRoutes);
 app.use("/api/predictions", predictionRoutes)
+app.use("/api/notifications", notificationRoutes);
+
 
 export {app}

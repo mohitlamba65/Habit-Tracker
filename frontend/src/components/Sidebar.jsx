@@ -10,6 +10,7 @@ const Sidebar = () => {
     { name: "Reports", path: "/reports", icon: "📈" },
     { name: "AI Assistant", path: "/ai-assistant", icon: "🤖" },
     { name: "Settings", path: "/settings", icon: "⚙️" },
+    { name: "Mood Tracker", path: "/mood", icon: "🧠" },
   ];
 
   return (
