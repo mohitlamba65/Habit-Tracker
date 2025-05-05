@@ -1,8 +1,7 @@
-import Agenda from 'agenda';
-if (process.env.NODE_ENV !== 'production') {
-  import('dotenv').then(dotenv => dotenv.config());
-}
 
+import Agenda from 'agenda';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const agenda2 = new Agenda({
   db: {
