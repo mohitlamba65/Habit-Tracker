@@ -60,7 +60,12 @@ export const registerUser = async (req, res) => {
         )
 
         if (!createdUser) {
-            throw new ApiError(500, "Something went wrong while registering the user")
+
+            return res.status(500).json(
+                {
+                    message: error.message || "Something went wrong while registering the user"
+                }
+            )
         }
 
         res.status(201).json({
@@ -94,7 +99,10 @@ export const loginUser = async (req, res) => {
         const isPasswordValid = await user.isPasswordCorrect(password)
 
         if (!isPasswordValid) {
-            throw new ApiError(401, "Invalid user credentials")
+            res.status(401)
+                .json({
+                message: "Invalid user credentials"
+            })
         }
 
         const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)

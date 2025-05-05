@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, List, UserPlus, LogIn, Grid, Bell } from "lucide-react";
@@ -7,40 +7,75 @@ import { fetchNotifications } from "../api/notification";
 import API from "../utils/axios";
 
 const Navbar = () => {
- 
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-const [unreadCount, setUnreadCount] = useState(0);
+  // Function to load notifications
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchNotifications();
+      console.log("Notification response:", response);
+      
+      if (response && response.data) {
+        // Check if unreadCount is directly provided
+        if (response.data.unreadCount !== undefined) {
+          setUnreadCount(response.data.unreadCount);
+        } 
+        // Otherwise calculate from notifications array
+        else if (response.data.notifications && Array.isArray(response.data.notifications)) {
+          const unread = response.data.notifications.filter(n => !n.isRead).length;
+          setUnreadCount(unread);
+        } else {
+          setUnreadCount(0);
+        }
+      } else {
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+      setUnreadCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  try {
-    fetchNotifications().then((res) => {
-      console.log(res)
-      // const unread = res.data.notifications.filter(n => !n.isRead).length;
-      // setUnreadCount(unread);
-    });
-  } catch (error) {
-    console.log("Failed to fetch notifications", error)
-    setUnreadCount(0);
-  }
-}, []);
-  
-useEffect(() => {
-  if ('serviceWorker' in navigator && 'PushManager' in window) {
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
-      });
-      await API.post("/users/push-subscribe", { subscription });
-    });
-  }
-}, []);
+  // Load notifications when component mounts
+  useEffect(() => {
+    loadNotifications();
+    
+    // Set up periodic refresh (every 60 seconds)
+    const intervalId = setInterval(loadNotifications, 60000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
-
+  // Set up push notifications if available
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      try {
+        navigator.serviceWorker.ready.then(async (reg) => {
+          try {
+            const subscription = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
+            });
+            await API.post("/users/push-subscribe", { subscription });
+            console.log("Push notification subscription successful");
+          } catch (err) {
+            console.error("Push subscription error:", err);
+          }
+        });
+      } catch (err) {
+        console.error("Service worker error:", err);
+      }
+    }
+  }, []);
 
   return (
     <motion.nav
-      className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 fixed top-0 left-0 w-full z-50 bg-white text-white shadow-lg"
+      className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 fixed top-0 left-0 w-full z-50 text-white shadow-lg"
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -77,7 +112,7 @@ useEffect(() => {
           {/* Notification Bell Icon */}
           <Link to="/notifications" className="relative">
             <Bell className="w-6 h-6 hover:text-yellow-300 transition duration-300" />
-            {unreadCount > 0 && (
+            {!loading && unreadCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {unreadCount}
               </span>

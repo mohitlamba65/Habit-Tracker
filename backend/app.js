@@ -10,7 +10,17 @@ import habitRoutes from "./src/router/habit.routes.js"
 import productivityRoutes from "./src/router/productivity.routes.js"
 import predictionRoutes from "./src/router/prediction.routes.js"
 import notificationRoutes from "./src/router/notification.routes.js";
-import './src/utils/scheduler.js'
+import { agenda } from "./src/services/scheduler.service.js"
+import agenda2 from "./src/services/agenda.js"
+import regeneratePrediction from "./src/jobs/regeneratePrediction.js"
+
+regeneratePrediction(agenda2);
+
+await agenda.start();
+
+// Run every week (Sunday at 2am)
+await agenda.every('0 2 * * 0', 'regenerate prediction');  // Using cron format
+
 
 const app = express()
 console.log("CORS Origin:", process.env.CORS_ORIGIN);
@@ -19,6 +29,10 @@ app.use(cors({
     credentials:true
 }))
 
+agenda.start().then(() => {
+    console.log('✅ Agenda started');
+});
+  
 app.use(express.json())
 app.use(express.urlencoded())
 app.use(express.static("public"))

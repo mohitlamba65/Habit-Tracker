@@ -5,20 +5,24 @@ import MainContext from "../context/MainContext";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import TaskModal from "../components/TaskModal";
-import API from "../utils/axios"
+import API from "../utils/axios";
 import {
   getTasks,
   completeTask,
   deleteTask,
   updateTaskPriority,
 } from "../api/taskApi.js";
+import axios from "axios";
 
 const Dashboard = () => {
   const { tasks, setTasks } = useContext(MainContext);
   const [filter, setFilter] = useState("all");
   const [sortKey, setSortKey] = useState("name");
-  const [mood, setMood] = useState(null); 
-  const [suggestedTasks, setSuggestedTasks] = useState([]); 
+  const [mood, setMood] = useState(null);
+  const [suggestedTasks, setSuggestedTasks] = useState([]);
+  const [productivityLogs, setProductivityLogs] = useState([]);
+
+  const { habitCreatedTrigger } = useContext(MainContext);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,8 +35,22 @@ const Dashboard = () => {
         setTasks(habitsRes);
 
         const logs = moodLogsRes.data;
+        const logsRes = await API.get("/habits/getHabitlogs");
+        const pLogs = logsRes.data;
+        
+        const formattedLogs = pLogs.map(log => ({
+          start_hour: new Date(log.start_time).getHours(),
+          mood: log.mood_code ?? 1, 
+          duration: log.completion_time
+            ? (new Date(log.completion_time) - new Date(log.start_time)) / (1000 * 60) 
+            : 0
+        }));
+        
+        setProductivityLogs(formattedLogs);
+        
         if (logs.length > 0) {
           const lastMood = logs.at(-1).mood;
+          
           setMood(lastMood);
           suggestTasks(lastMood, habitsRes);
         }
@@ -44,7 +62,72 @@ const Dashboard = () => {
     fetchData();
   }, [setTasks]);
 
+  const fetchProductiveTimes = async (logs) => {
+    try {
+      console.log("Sending logs to ML service:", logs);
+      const res = await axios.post("http://127.0.0.1:5001/predict", { logs });
+      console.log("ML service response:", res.data);
+      
+      // Check if we got valid predicted times from ML service
+      if (res.data && res.data.predicted_times && res.data.predicted_times.length > 0) {
+        return res.data.predicted_times;
+      } else {
+        throw new Error("No valid prediction from ML service");
+      }
+    } catch (mlError) {
+      console.error("ML service error:", mlError);
+      
+      try {
+        console.log("Using fallback API");
+        const fallback = await API.post("/predictions/generate");
+        console.log("Fallback API response:", fallback.data);
+        
+        // Extract peak_productivity_times from the response
+        if (fallback.data && fallback.data.peak_productivity_times) {
+          return fallback.data.peak_productivity_times;
+        } else {
+          return [];
+        }
+      } catch (fallbackError) {
+        console.error("Fallback API error:", fallbackError);
+        toast.error("Failed to fetch productive times.");
+        return [];
+      }
+    }
+  };
+  
 
+  useEffect(() => {
+    const showPredictedTimes = async () => {
+      if (!habitCreatedTrigger || productivityLogs.length === 0) return;
+  
+      const times = await fetchProductiveTimes(productivityLogs);
+      if (times.length > 0) {
+        toast.success(`Predicted productive times: ${times.join(", ")}`, {
+          duration: 6000,
+        });
+  
+        toast(
+          (t) => (
+            <span>
+              Try aligning this habit with <b>{times[0]}</b> for better consistency.
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="ml-4 bg-purple-500 text-white px-2 py-1 rounded"
+              >
+                Got it!
+              </button>
+            </span>
+          ),
+          { duration: 8000 }
+        );
+      }
+    };
+  
+    showPredictedTimes();
+  }, [habitCreatedTrigger, productivityLogs]);
+  
+  
   const suggestTasks = (userMood, allTasks) => {
     let filtered = [];
 
@@ -55,19 +138,26 @@ const Dashboard = () => {
     } else if (userMood === "sad" || userMood === "stressed") {
       filtered = allTasks.filter((task) => task.priority === "low");
     } else {
-      filtered = allTasks; 
+      filtered = allTasks;
     }
 
     setSuggestedTasks(filtered);
   };
 
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "completed") return task.status;
-    if (filter === "pending") return !task.status;
+    if (filter === "completed") return task.status === "completed";
+    if (filter === "pending") return task.status === "pending";
+    if (filter === "missed") return task.status === "missed";
     return true;
   });
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
+    // Prioritize missed tasks first
+    const statusPriority = { missed: 0, pending: 1, completed: 2 };
+    if (statusPriority[a.status] !== statusPriority[b.status]) {
+      return statusPriority[a.status] - statusPriority[b.status];
+    }
+
     if (sortKey === "name") return a.habit.localeCompare(b.habit);
     if (sortKey === "time")
       return new Date(a.completion_time) - new Date(b.completion_time);
@@ -80,7 +170,9 @@ const Dashboard = () => {
     try {
       await completeTask(id);
       setTasks((prev) =>
-        prev.map((task) => (task._id === id ? { ...task, status: true } : task))
+        prev.map((task) =>
+          task._id === id ? { ...task, status: "completed" } : task
+        )
       );
       toast.success("Task marked as complete!");
     } catch (err) {
@@ -99,7 +191,7 @@ const Dashboard = () => {
     }
   };
 
-  const completedCount = tasks.filter((t) => t.status).length;
+  const completedCount = tasks.filter((t) => t.status === "completed").length;
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
   return (
@@ -148,14 +240,33 @@ const Dashboard = () => {
 
             {suggestedTasks.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {suggestedTasks.map((task) => (
+                {sortedTasks.map((task) => (
                   <div
                     key={task._id}
-                    className="p-4 border rounded-lg bg-blue-50 border-blue-300"
+                    className={`p-4 border rounded-lg ${
+                      task.status === "missed"
+                        ? "bg-red-50 border-red-400"
+                        : task.status === "completed"
+                        ? "bg-green-50 border-green-400"
+                        : "bg-yellow-50 border-yellow-300"
+                    }`}
                   >
-                    <h2 className="font-semibold text-blue-700">
-                      {task.habit}
-                    </h2>
+                    <div className="flex justify-between items-center">
+                      <h2 className="font-semibold text-gray-800">
+                        {task.habit}
+                      </h2>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          task.status === "missed"
+                            ? "bg-red-200 text-red-800"
+                            : task.status === "completed"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-yellow-200 text-yellow-800"
+                        }`}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
                     <p className="text-gray-600 text-sm">
                       Due: {new Date(task.completion_time).toLocaleString()}
                     </p>
@@ -168,7 +279,6 @@ const Dashboard = () => {
           </div>
         )}
 
-
         <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
           <TaskModal />
           <select
@@ -177,9 +287,8 @@ const Dashboard = () => {
           >
             <option value="name">Sort by Name</option>
             <option value="time">Sort by Deadline</option>
-            <option value="priority">Sort by Priority</option> 
+            <option value="priority">Sort by Priority</option>
           </select>
-
         </div>
 
         <div className="grid grid-cols-1 gap-4">
@@ -188,7 +297,7 @@ const Dashboard = () => {
               <motion.div
                 key={task._id}
                 className={`p-5 rounded-lg shadow-md border transition-all ${
-                  task.status
+                  task.status=="completed"
                     ? "bg-green-50 border-green-400"
                     : "bg-white border-gray-200"
                 }`}
@@ -234,7 +343,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="mt-3 flex gap-2">
-                  {!task.status && (
+                  {task.status=="pending" && (
                     <button
                       className="bg-gradient-to-r from-[#6348EB] via-[#8B36EA] to-[#2F5FEB] text-white px-3 py-1.5 rounded-md text-sm"
                       onClick={() => handleComplete(task._id)}

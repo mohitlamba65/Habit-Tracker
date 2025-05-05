@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import MainContext from "./MainContext";
-import { getTasks } from "../api/taskApi.js"; 
+import { getTasks } from "../api/taskApi.js";
 
 const MainProvider = ({ children }) => {
-  const [tasks, setTasks] = useState([]); 
+  const [tasks, setTasks] = useState([]);
   const [currentView, setCurrentView] = useState("tasks");
   const [settings, setSettings] = useState({
     darkMode: false,
@@ -12,19 +12,24 @@ const MainProvider = ({ children }) => {
     aiAssistant: true,
   });
 
+  const [habitCreatedTrigger, setHabitCreatedTrigger] = useState(false);
+
+  const triggerHabitCreated = () => {
+    setHabitCreatedTrigger((prev) => !prev);
+  };
+
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const fetchedTasks = await getTasks();
-        setTasks(fetchedTasks); 
+        setTasks(fetchedTasks);
       } catch (err) {
         console.error("Failed to fetch tasks from backend:", err);
       }
     };
 
-    fetchTasks(); 
+    fetchTasks();
   }, []);
-
 
   useEffect(() => {
     try {
@@ -45,6 +50,8 @@ const MainProvider = ({ children }) => {
         setSettings,
         currentView,
         handleNavigation,
+        habitCreatedTrigger,
+        triggerHabitCreated,
       }}
     >
       {children}

@@ -14,7 +14,7 @@ import { Toaster } from "react-hot-toast";
 import MainProvider from "./context/MainProvider";
 import { ThemeProvider } from "./context/ThemeProvider";
 import MoodTracker from "./components/MoodTracer";
-import { Notification } from "../../backend/src/models/notification.model";
+import Notifications from "./components/Notifications";
 
 function App() {
   return (
@@ -43,7 +43,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/mood" element={<MoodTracker />} />
-          <Route path="/notifications" element={<Notification />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Routes>
       </ThemeProvider>
     </MainProvider>

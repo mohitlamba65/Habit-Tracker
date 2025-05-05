@@ -1,4 +1,4 @@
-import  { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { Dialog } from "@headlessui/react";
 import { Plus } from "lucide-react";
 import { addTask } from "../api/taskApi";
@@ -9,18 +9,19 @@ const TaskModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [habit, setHabit] = useState("");
   const [completionTime, setCompletionTime] = useState("");
-
   const { setTasks } = useContext(MainContext);
+  const { triggerHabitCreated } = useContext(MainContext);
 
   const handleAdd = async () => {
-    if (!habit || !completionTime) return toast.error("Please fill all fields.");
+    if (!habit || !completionTime)
+      return toast.error("Please fill all fields.");
 
     try {
       const newTask = await addTask({
         habit,
         completion_time: completionTime,
       });
-
+      triggerHabitCreated();
       setTasks((prev) => [...prev, newTask]);
       toast.success("Habit added!");
       setIsOpen(false);
@@ -42,11 +43,17 @@ const TaskModal = () => {
         Add Habit
       </button>
 
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
+      <Dialog
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="relative z-50"
+      >
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center">
           <Dialog.Panel className="bg-white rounded-lg p-6 w-full max-w-md">
-            <Dialog.Title className="text-xl font-bold mb-4">New Habit</Dialog.Title>
+            <Dialog.Title className="text-xl font-bold mb-4">
+              New Habit
+            </Dialog.Title>
 
             <input
               type="text"
@@ -85,4 +92,3 @@ const TaskModal = () => {
 };
 
 export default TaskModal;
-

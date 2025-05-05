@@ -1,21 +1,52 @@
 import { Prediction } from "../models/prediction.model.js";
 import { Productivity } from "../models/productivity.model.js"
+import { getProductivityPrediction } from "../utils/mlService.js";
 
-const analyzeTimestamps = (logs) => {
+export const analyzeTimestamps = (logs) => {
+  // Initialize array to count occurrences for each hour (0-23)
   const hours = Array(24).fill(0);
+
   logs.forEach((log) => {
-    const hour = new Date(log.createdAt).getHours();
-    hours[hour]++;
+    if (log && log.createdAt) {
+      try {
+        const hour = new Date(log.createdAt).getHours();
+        if (!isNaN(hour) && hour >= 0 && hour < 24) {
+          hours[hour]++;
+        }
+      } catch (error) {
+        console.error("Error parsing timestamp:", error);
+      }
+    }
   });
+
+  // Find the maximum count
   const max = Math.max(...hours);
-  const peak = hours.map((v, i) => (v === max ? i : null)).filter((x) => x !== null);
-  return peak;
+
+  // If all hours have count 0, return default hours
+  if (max === 0) {
+    return [9, 14, 19]; // Default productivity hours (morning, afternoon, evening)
+  }
+
+  // Find all hours that have the maximum count
+  const peakHours = hours.map((count, hour) => (count === max ? hour : null))
+    .filter(hour => hour !== null);
+
+  console.log("Peak hours based on timestamp analysis:", peakHours);
+
+  return peakHours;
 };
 
 export const generatePrediction = async (req, res) => {
   try {
     const logs = await Productivity.find({ user: req.user._id });
-    const peakHours = analyzeTimestamps(logs);
+
+    let peakHours = await getProductivityPrediction(req.user._id, logs);
+
+    // Fallback if ML API failed or returned empty
+    if (!peakHours || peakHours.length === 0) {
+      console.warn("Falling back to timestamp analysis");
+      peakHours = analyzeTimestamps(logs);
+    }
 
     const prediction = await Prediction.create({
       user: req.user._id,
@@ -24,9 +55,11 @@ export const generatePrediction = async (req, res) => {
 
     res.status(201).json(prediction);
   } catch (err) {
+    console.error("Prediction error:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 export const getUserPredictions = async (req, res) => {
   try {

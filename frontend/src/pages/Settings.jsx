@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { ThemeContext } from "../context/ThemeContext";
-import { toggleNotifications } from "../api/notification";
+import { updateNotificationPrefs } from "../api/notification";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ const Settings = () => {
   };
 
   const handleToggle = async() => {
-    toggleNotifications().then((res) => setEnabled(res.data.enabled));
+    updateNotificationPrefs().then((res) => setEnabled(res.data.enabled));
     await API.patch("/notifications/preferences", formData.notifications);
 
   };

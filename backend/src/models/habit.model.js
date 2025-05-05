@@ -14,13 +14,18 @@ const habitSchema = new Schema(
       lowercase: true
     },
     status: {
-      type: Boolean,
-      default: false
+      type: String,
+      enum: ["completed","pending","missed"],
+      default: "pending"
     },
     completion_time: {
       type: String,
       required: [true, "Completion time is required"]
     },
+    actual_due: {
+      type: Date,
+      default: null
+    },    
     reminderTime: {
       type: String,
       default: "20:00"

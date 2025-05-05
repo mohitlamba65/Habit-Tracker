@@ -92,7 +92,7 @@ const AiAssistant = () => {
       return;
     }
 
-    const maxFileSize = 100 * 1024;
+    const maxFileSize = 200 * 1024;
     if (file.size > maxFileSize) {
       toast.error("File too large! Limit ~100KB");
       return;

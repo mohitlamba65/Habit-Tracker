@@ -1,7 +1,5 @@
 import { Notification } from "../models/notification.model.js";
-import { sendEmail } from "../utils/sendReminder.js";
-import { Habit } from "../models/habit.model.js";
-import { sendWhatsApp } from "../utils/sendWhatsapp.js";
+
 
 export const getNotifications = async (req, res) => {
   try {
@@ -9,91 +7,105 @@ export const getNotifications = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized - user not found" });
     }
 
-    const notifications = await Notification.find({ user: req.user._id }).sort({ timestamp: -1 });
-    const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
+    const notifications = await Notification.find({ user: req.user._id })
+      .sort({ timestamp: -1 })
+      .lean(); // Using lean() for better performance
 
-    res.status(200).json({ notifications, unreadCount });
+    const unreadCount = await Notification.countDocuments({ 
+      user: req.user._id, 
+      isRead: false 
+    });
+
+    console.log(`Found ${notifications.length} notifications, ${unreadCount} unread`);
+
+    res.status(200).json({ 
+      notifications, 
+      unreadCount,
+      success: true
+    });
   } catch (err) {
     console.error("Error fetching notifications:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      message: "Server error while fetching notifications", 
+      success: false 
+    });
   }
 };
 
-
 export const markAsRead = async (req, res) => {
-  await Notification.findByIdAndUpdate(
-    req.params.id,
-    {
-      isRead: true
+  try {
+    const notificationId = req.params.id;
+    
+    if (!notificationId) {
+      return res.status(400).json({ message: "Notification ID is required" });
     }
-  );
-  res.status(200).json({ message: "Marked as read" });
+    
+    await Notification.findByIdAndUpdate(
+      notificationId,
+      { isRead: true },
+      { new: true } 
+    );
+    
+    res.status(200).json({ message: "Marked as read", success: true });
+  } catch (err) {
+    console.error("Error marking notification as read:", err);
+    res.status(500).json({ message: "Server error", success: false });
+  }
 };
 
 export const updateNotificationPrefs = async (req, res) => {
-  const user = req.user;
-  const settings = req.body;
-
-  user.notificationSettings = {
-    ...user.notificationSettings,
-    ...settings
-  };
-
-  await user.save();
-  res.status(200).json({ updated: user.notificationSettings });
-};
-
-
-
-export const sendReminderEmail = async (req, res) => {
-  const { email, name } = req.user;
-
   try {
+    const user = req.user;
+    const settings = req.body;
 
-    const habits = await Habit.find({
-      owner: req.user?._id,
-      status: false
-    })
-
-    if (!habits.length) {
-      return res.status(200).json({ message: "No pending tasks for today" })
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const taskList = habits.map((h, i) => `${i + 1}. ${h.habit} (Due: ${h.completion_time})`).join("\n")
+    user.notificationSettings = {
+      ...user.notificationSettings,
+      ...settings
+    };
 
-    await sendEmail(
-      email,
-      "⏰ Habit Reminder",
-      `Hey ${name || "there"}, \n\nHere are your pending tasks for today:\n\n${taskList}\n\nComplete them and boost your productivity! ✅`
-    );
-
-    await Notification.create({
-      user: req.user._id,
-      message: "Reminder email sent!",
+    await user.save();
+    
+    res.status(200).json({ 
+      updated: user.notificationSettings,
+      success: true 
     });
-
-
-    res.status(200).json({ message: "Reminder email sent successfully!" });
   } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ message: "Failed to send reminder email." });
+    console.error("Error updating notification preferences:", err);
+    res.status(500).json({ message: "Server error", success: false });
   }
 };
 
-export const sendWhatsAppReminder = async (req, res) => {
-  const { phone, name } = req.user;
-  const habits = await Habit.find({ owner: req.user._id, status: false });
-
-  const list = habits.map((h, i) => `${i + 1}. ${h.habit}`).join("\n");
-
-  await sendWhatsApp(phone, `Hi ${name},\nDon't forget your habits:\n${list}`);
-  await Notification.create({
-    user: req.user._id,
-    message: "WhatsApp habit reminder sent!",
-  });
-
-
-  res.status(200).json({ message: "WhatsApp reminder sent" });
-
+// Create a notification for a user
+export const createNotification = async (userId, message) => {
+  try {
+    const notification = await Notification.create({
+      user: userId,
+      message,
+      isRead: false
+    });
+    
+    return notification;
+  } catch (err) {
+    console.error("Error creating notification:", err);
+    throw err;
+  }
 };
 
+// Helper function to mark all notifications as read
+export const markAllAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { user: req.user._id, isRead: false },
+      { isRead: true }
+    );
+    
+    res.status(200).json({ message: "All notifications marked as read", success: true });
+  } catch (err) {
+    console.error("Error marking all notifications as read:", err);
+    res.status(500).json({ message: "Server error", success: false });
+  }
+};
