@@ -26,7 +26,8 @@ const app = express()
 // Define allowed origins - make sure these URLs are exact matches without trailing slashes
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://habit-tracker-git-main-mohits-projects-c3a090b0.vercel.app/'
+    'https://habit-tracker-chi-eight.vercel.app',
+    'https://habit-tracker-css7d1ibd-mohits-projects-c3a090b0.vercel.app',
 ];
 
 console.log("Allowed CORS Origins:", allowedOrigins);
