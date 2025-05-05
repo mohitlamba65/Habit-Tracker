@@ -27,7 +27,7 @@ const app = express()
 const allowedOrigins = [
     'http://localhost:5173',
     'https://habit-tracker-chi-eight.vercel.app',
-    'https://habit-tracker-css7d1ibd-mohits-projects-c3a090b0.vercel.app',
+    'https://habit-tracker-dv1t3n6k4-mohits-projects-c3a090b0.vercel.app/'
 ];
 
 console.log("Allowed CORS Origins:", allowedOrigins);
