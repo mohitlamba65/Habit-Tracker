@@ -25,7 +25,10 @@ await agenda.every('0 2 * * 0', 'regenerate prediction');  // Using cron format
 const app = express()
 console.log("CORS Origin:", process.env.CORS_ORIGIN);
 app.use(cors({
-    origin: process.env.CORS_ORIGIN ,
+    origin: [
+        process.env.CORS_ORIGIN,          // Local development
+        'https://habit-tracker-css7d1ibd-mohits-projects-c3a090b0.vercel.app/',  // Production frontend URL
+      ],
     credentials:true
 }))
 

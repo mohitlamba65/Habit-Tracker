@@ -65,7 +65,7 @@ const Dashboard = () => {
   const fetchProductiveTimes = async (logs) => {
     try {
       console.log("Sending logs to ML service:", logs);
-      const res = await axios.post("http://127.0.0.1:5001/predict", { logs });
+      const res = await axios.post(`${import.meta.env.VITE_ML_SERVICE_URL}/predict`, { logs });
       console.log("ML service response:", res.data);
       
       // Check if we got valid predicted times from ML service

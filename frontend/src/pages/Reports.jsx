@@ -21,7 +21,6 @@ const Reports = () => {
 
   const currentHour = new Date().getHours();
 
-  // Define chart initialization functions with useCallback BEFORE they are referenced
   const initTaskTrendChart = useCallback(() => {
     const ctx = document.getElementById("taskTrendChart");
     if (!ctx) return;
@@ -260,7 +259,7 @@ const Reports = () => {
       console.log("Sending logs to ML service:", formattedLogs);
 
       // Try ML service first
-      const mlRes = await axios.post("http://127.0.0.1:5001/predict", {
+      const mlRes = await axios.post(`${import.meta.env.VITE_ML_SERVICE_URL}/predict`, {
         logs: formattedLogs,
       });
 

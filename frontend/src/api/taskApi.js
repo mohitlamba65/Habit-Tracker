@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api/habits",
+  baseURL: `${import.meta.env.VITE_API_URL}/habits`,
   withCredentials: true,
 });
 
