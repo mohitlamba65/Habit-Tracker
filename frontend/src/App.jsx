@@ -4,8 +4,6 @@ import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./components/Dashboard";
-// import HabitDetails from "./pages/HabitDetails";
-// import Habits from "./pages/Habits";
 import AiAssistant from "./pages/AiAssistant";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -15,6 +13,7 @@ import MainProvider from "./context/MainProvider";
 import { ThemeProvider } from "./context/ThemeProvider";
 import MoodTracker from "./components/MoodTracer";
 import Notifications from "./components/Notifications";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -32,18 +31,47 @@ function App() {
           }}
         />
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* <Route path="/habits" element={<Habits />} /> */}
-          {/* <Route path="/habit/:id" element={<HabitDetails />} /> */}
-          <Route path="/ai-assistant" element={<AiAssistant />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/mood" element={<MoodTracker />} />
-          <Route path="/notifications" element={<Notifications />} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-assistant" element={
+            <ProtectedRoute>
+              <AiAssistant />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="/tasks" element={
+            <ProtectedRoute>
+              <Tasks />
+            </ProtectedRoute>
+          } />
+          <Route path="/mood" element={
+            <ProtectedRoute>
+              <MoodTracker />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          } />
         </Routes>
       </ThemeProvider>
     </MainProvider>
