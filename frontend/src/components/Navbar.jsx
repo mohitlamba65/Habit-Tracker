@@ -104,7 +104,7 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div className="flex space-x-6 items-center">
           <NavLink to="/" label="Home" icon={<Home />} />
-          <NavLink to="/habits" label="Habits" icon={<List />} />
+          {/* <NavLink to="/habits" label="Habits" icon={<List />} /> */}
           <NavLink to="/signup" label="Signup" icon={<UserPlus />} />
           <NavLink to="/login" label="Login" icon={<LogIn />} />
           <NavLink to="/dashboard" label="Dashboard" icon={<Grid />} />

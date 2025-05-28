@@ -11,23 +11,13 @@ import productivityRoutes from "./src/router/productivity.routes.js"
 import predictionRoutes from "./src/router/prediction.routes.js"
 import notificationRoutes from "./src/router/notification.routes.js";
 import { agenda } from "./src/services/scheduler.service.js"
-import agenda2 from "./src/services/agenda.js"
 import regeneratePrediction from "./src/jobs/regeneratePrediction.js"
 
-regeneratePrediction(agenda2);
-
-await agenda.start();
-
-// Run every week (Sunday at 2am)
-await agenda.every('0 2 * * 0', 'regenerate prediction');  // Using cron format
-
+// Initialize Express app first
 const app = express()
 
-// Define allowed origins - make sure these URLs are exact matches without trailing slashes
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://habit-tracker-chi-eight.vercel.app',
-    'https://habit-tracker-dv1t3n6k4-mohits-projects-c3a090b0.vercel.app/'
 ];
 
 console.log("Allowed CORS Origins:", allowedOrigins);
@@ -46,19 +36,37 @@ app.use(cors({
     credentials: true
 }))
 
-agenda.start().then(() => {
-    console.log('✅ Agenda started');
-});
-
+// Properly configure express middleware
 app.use(express.json())
-app.use(express.urlencoded())
+app.use(express.urlencoded({ extended: true }))
 app.use(express.static("public"))
 app.use(cookieParser())
 
+// Set up routes
 app.use("/api/users", userRoutes)
 app.use("/api/habits", habitRoutes)
 app.use("/api/productivity", productivityRoutes);
 app.use("/api/predictions", predictionRoutes)
 app.use("/api/notifications", notificationRoutes);
+
+// Configure Agenda jobs after Express is set up
+const setupAgenda = async () => {
+    try {
+        // Register the prediction regeneration job
+        regeneratePrediction(agenda);
+        
+        // Start agenda once
+        await agenda.start();
+        console.log('✅ Agenda started');
+        
+        // Schedule prediction regeneration job (Sunday at 2am)
+        await agenda.every('0 2 * * 0', 'regenerate prediction');
+    } catch (err) {
+        console.error('Failed to start Agenda:', err);
+    }
+};
+
+// Run agenda setup
+setupAgenda();
 
 export { app }
